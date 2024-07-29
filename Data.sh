@@ -20,7 +20,7 @@ echo -e "\nStart time:" ; date
 conda activate /fibus/fs0/02/cgr7735/envs/Fugacity_calcs #activate env
 
 echo "run julia"
-julia PC_SAFT.jl "COMPONENT_NAME" "EOS"
+julia EOS_evaluator.jl "COMPONENT_NAME" "EOS"
 echo "finish julia"
 
 echo
