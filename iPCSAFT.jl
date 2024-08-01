@@ -1,6 +1,7 @@
 using Clapeyron
 import Clapeyron: PCSAFTModel, PCSAFTParam
 import Clapeyron: @f, data, eos, eos_impl, a_res, a_hc, a_disp, a_assoc, transform_params, saft_lorentz_berthelot
+import Clapeyron: default_references, default_locations
 
 abstract type iPCSAFTModel <: PCSAFTModel end
 
@@ -33,7 +34,7 @@ Base.eltype(p::iPCSAFTParam{T}) where T = T
 @newmodel iPCSAFT iPCSAFTModel iPCSAFTParam{T}
 
 default_references(::Type{iPCSAFT}) = ["10.1021/acs.iecr.9b04660"]
-default_locations(::Type{iPCSAFT}) = []
+default_locations(::Type{iPCSAFT}) = [pwd()*"/iPCSAFT_like.csv"]
 
 function transform_params(::Type{iPCSAFT},params)
     sigma = params["sigma"]
@@ -50,6 +51,6 @@ end
 
 function eos(model::iPCSAFTModel, V, T, z = SA[1.0])
     c = model.params.c[1]
-    V = V+c
+    V = V+sum(z)*c
     return eos_impl(model,V,T,z)
 end
