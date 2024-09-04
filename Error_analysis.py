@@ -53,6 +53,7 @@ def merge_dicts(*dicts):
 def Medi(Equation, Substance, Property):
     Eq = Equation
     comp = Substance
+    #loading files
     if Property == "fugacity":
         if not check_file_exists(f'{Eq} {comp} 1.npz', Eq, comp) or not check_file_exists(f'CoolProp {comp}.npz', Eq, comp):
             return {}
@@ -67,6 +68,7 @@ def Medi(Equation, Substance, Property):
     with open(comp + ' metadata' + '.json') as f:
         metadata = json.load(f)
 
+    #loading vectors
     phi_EOS = np.transpose(phi_EOS_data["Phi_PR"])
     phi_exp = phi_exp_data["Phi_PR"]
     EOS_Error = np.transpose(abs(phi_EOS - phi_exp) * 100 / phi_exp)
@@ -83,6 +85,7 @@ def Medi(Equation, Substance, Property):
     Error_compressed_gas = []
     Error_compressed_liquid = []
 
+    #Separating sections that can be separated without the vapor pressure 
     Error_rest = EOS_Error[0:Tc_ind, 0:Pc_ind]
     Error_supercritical_liquid = EOS_Error[0:Tc_ind, Pc_ind:6000].flatten().tolist()
     Error_supercritical_gas = EOS_Error[Tc_ind:6000, 0:Pc_ind].flatten().tolist()
@@ -92,6 +95,7 @@ def Medi(Equation, Substance, Property):
     for i in range(Error_shape[0]):
         Temp = Tgrid[i]
         try:
+            #tries to do it the easy way, by getting the index of vapor pressure, and dividing liquid/gas arrays by that index
             vp = vapor_pressure(Temp, handle)
             Psat_ind = bisect(Pgrid, vp)
 
@@ -101,6 +105,8 @@ def Medi(Equation, Substance, Property):
                 Error_compressed_gas.extend(EOS_Error[i, 0:Psat_ind])
                 Error_compressed_liquid.extend(EOS_Error[i, Psat_ind:Error_shape[1]])
         except ValueError:
+            #vapor_pressure fails constantly, so this function is here to do the same thing, it checks element by element using the last vp index as initial point, and when it sees a 
+            #new phase change it divides the arrays
             Error_compressed_gas.extend(EOS_Error[i, 0:Psat_ind])
             for j in range(Psat_ind, Error_shape[1]):
                 Phase = CoolProp.CoolProp.PhaseSI("T", Temp, "P", Pgrid[j], comp)
