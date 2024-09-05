@@ -1,7 +1,8 @@
 using Clapeyron, NPZ, PyCall
 
 CoolProp_ = pyimport("CoolProp")
-
+include("iPCSAFT.jl")
+include("TVTPR.jl")
 
 handle = CoolProp_.AbstractState("HEOS", "R40")
 Tmin = CoolProp_.AbstractState.Tmin(handle)
