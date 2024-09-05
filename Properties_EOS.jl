@@ -3,6 +3,10 @@ using Clapeyron, NPZ, PyCall
 CoolProp_ = pyimport("CoolProp")
 
 
+handle = CoolProp_.AbstractState("HEOS", "R40")
+Tmin = CoolProp_.AbstractState.Tmin(handle)
+Tc = CoolProp_.AbstractState.T_critical(handle)
+
 # Function to calculate vapor pressure across a temperature range
 function calculate_vp(compound, CES)
     N = 200
@@ -10,11 +14,7 @@ function calculate_vp(compound, CES)
 
     model = eval(Meta.parse(CES * "([" * "\"" * compound * "\"])"))
 
-
-    Tc = CoolProp_.AbstractState.T_critical(handle)
-    Tmin = CoolProp_.AbstractState.Tmin(handle)
     Tmax = 0.9999 * Tc
-
     T = LinRange(Tmin, Tmax, N)
 
     for i in 1:length(T)
@@ -28,25 +28,17 @@ end
 # Function to calculate enthalpy of vaporization across a temperature range
 function calculate_Hv(compound, CES)
     N = 200
-    Hv_values = zeros(N)
 
     model = eval(Meta.parse(CES * "([" * "\"" * compound * "\"])"))
 
-
-    Tc = CoolProp_.AbstractState.T_critical(handle)
-    Tmin = CoolProp_.AbstractState.Tmin(handle)
     Tmax = 0.9999 * Tc
 
     T = LinRange(Tmin, Tmax, N)
-
-    for i in 1:length(T)
-        h_liquid = enthalpy(model, T[i], 0.0)  # Enthalpy at liquid phase (0 quality)
-        h_vapor = enthalpy(model, T[i], 1.0)   # Enthalpy at vapor phase (1 quality)
-        Hv_values[i] = h_vapor - h_liquid
-    end
+    Hv_values = enthalpy_vap.(model,T)
 
     filename_Hv = "Hv " * CES * " " * compound * ".npz"
     NPZ.npzwrite(filename_Hv, Dict("Hv" => Hv_values))
+    return Hv_values
 end
 
 # Function to calculate density matrix
@@ -56,7 +48,6 @@ function density(compound, CES)
     model = eval(Meta.parse(CES * "([" * "\"" * compound * "\"])"))
 
     pc = CoolProp_.AbstractState.p_critical(handle)
-    Tmin = CoolProp_.AbstractState.Tmin(handle)
     Tmax = CoolProp_.AbstractState.Tmax(handle)
 
     pmin = 0.001 * pc
@@ -87,7 +78,7 @@ function density(compound, CES)
     return Phi_PR
 end
 
-handle = CoolProp_.AbstractState("HEOS", ARGS[1])
+
 # Example usage:
 # To calculate and save the vapor pressure
 calculate_vp(ARGS[1], ARGS[2])
@@ -97,6 +88,3 @@ calculate_Hv(ARGS[1], ARGS[2])
 
 # To calculate and print the density matrix
 density(ARGS[1], ARGS[2])
-
-
-
