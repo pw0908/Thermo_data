@@ -66,6 +66,35 @@ def density(compound):
         np.savez_compressed(f, **{"Phi_PR": Phi_PR})
 
     return Phi_PR
+    
+def C(type):
+    Phi_PR = []
+    
+    N = 6000
+    handle = CoolProp.AbstractState("HEOS", compound)
+
+    pc = handle.p_critical()
+    
+    Tmin = handle.Tmin()
+    Tmax = handle.Tmax()
+    
+    pmin = 0.001*pc
+    pmax = handle.pmax()
+    
+    T = np.linspace(Tmin, Tmax, N)
+    P = np.linspace(pmin, pmax, N)
+    for pr in P:
+        Phi_cool = []
+        for t in T:
+            handle.update(CoolProp.PT_INPUTS, pr, t)
+            Phi_cool.append(eval(Meta.parse("handle."*type*"molar"*"()"))
+        Phi_PR.append(Phi_cool)    
+        
+    filename = f'{type} CoolProp {compound}.npz'
+    with open(filename, 'wb') as f:
+        np.savez_compressed(f, **{"Phi_PR": Phi_PR})
+
+    return Phi_PR
 
 density(sys.argv[1])
 
