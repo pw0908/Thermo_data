@@ -67,7 +67,7 @@ def density(compound):
 
     return Phi_PR
     
-def C(type):
+def C(type,compound):
     Phi_PR = []
     
     N = 6000
@@ -87,7 +87,10 @@ def C(type):
         Phi_cool = []
         for t in T:
             handle.update(CoolProp.PT_INPUTS, pr, t)
-            Phi_cool.append(eval(Meta.parse("handle."*type*"molar"*"()"))
+            if type=="cv":
+                Phi_cool.append(handle.cvmolar())
+            elif type=="cp":
+                Phi_cool.append(handle.cpmolar())
         Phi_PR.append(Phi_cool)    
         
     filename = f'{type} CoolProp {compound}.npz'
@@ -100,3 +103,4 @@ density(sys.argv[1])
 
 saturation_property(sys.argv[1],Hv)
 saturation_property(sys.argv[1],vp)
+C("cp",sys.argv[1])
