@@ -27,7 +27,7 @@ function calculate_vp(compound, CES)
 end
 
 # Function to calculate enthalpy of vaporization across a temperature range
-function calculate_Hv(compound, CES)
+function calculate_pHv(compound, CES)
     N = 200
 
     model = eval(Meta.parse(CES * "([" * "\"" * compound * "\"])"))
@@ -35,11 +35,27 @@ function calculate_Hv(compound, CES)
     Tmax = 0.9999 * Tc
 
     T = LinRange(Tmin, Tmax, N)
-    Hv_values = enthalpy_vap.(model,T)
+    Hv_values = zeros(N)
+    pv_values = zeros(N)
+    v0 = nothing
+    for i in 1:length(T)
+        if i == 1
+            (pv_values[i], vl, vv) = saturation_pressure(model, T[i])
+        else
+            (pv_values[i], vl, vv) = saturation_pressure(model, T[i]; v0=v0)
+        end
+        hl = Clapeyron.VT_enthalpy(model, vl, T[i], [1.])
+        hv = Clapeyron.VT_enthalpy(model, vv, T[i], [1.])
+        v0 = (vl, vv)
+        Hv_values[i] = hv - hl
+    end
 
     filename_Hv = "Hv " * CES * " " * compound * ".npz"
     NPZ.npzwrite(filename_Hv, Dict("Hv" => Hv_values))
-    return Hv_values
+
+    filename_pv = "pv " * CES * " " * compound * ".npz"
+    NPZ.npzwrite(filename_pv, Dict("pv" => pv_values))
+    return Hv_values, pv_values
 end
 
 # Function to calculate density matrix
